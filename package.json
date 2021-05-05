@@ -1,0 +1,14 @@
+{
+  "name": "projeto-final-linguagens-formais",
+  "version": "1.0.0",
+  "main": "index.js",
+  "author": "GuiOliveira98 <guil.oliveira98@gmail.com>",
+  "license": "MIT",
+  "scripts": {
+    "watch": "yarn tsc --project tsconfig,json --watch",
+    "main": "node out/index.js"
+  },
+  "dependencies": {
+    "typescript": "^4.2.4"
+  }
+}
