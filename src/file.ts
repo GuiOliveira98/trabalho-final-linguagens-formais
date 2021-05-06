@@ -6,7 +6,7 @@ type Transformation = {
   symbol: string;
 };
 
-type Language = {
+export type Language = {
   name: string;
   symbols: string[];
   states: string[];
