@@ -1,7 +1,13 @@
-import { Language, loadLanguageDataFromFile, saveLanguageToFile } from "./file";
+import {
+  Language,
+  loadLanguageDataFromFile,
+  saveLanguageToFile,
+  Transformation,
+} from "./file";
 
 function main() {
   const language = loadLanguageDataFromFile("example_file.txt");
+  console.log(processWord("bab", language));
   simplifyLanguage(language);
   saveLanguageToFile(language, "out.txt");
 }
@@ -63,6 +69,50 @@ function simplifyLanguage(language: Language) {
       statesReachableFromFinalStates.includes(transformation.state) &&
       statesReachableFromFinalStates.includes(transformation.nextState)
   );
+}
+
+function processWord(
+  word: string,
+  language: Language
+): {
+  isAccepted: boolean;
+  failedReason?: "undefined_transformation" | "state_is_not_final";
+  transformations: Transformation[];
+} {
+  let currentState = language.initialState;
+  const transformations: Transformation[] = [];
+  let transformation: Transformation | undefined;
+
+  for (let step = 0; step < word.length; step++) {
+    let symbol = word[step];
+
+    transformation = language.transformations.find(
+      (transformation) =>
+        transformation.state === currentState &&
+        transformation.symbol === symbol
+    );
+
+    if (transformation === undefined) {
+      return {
+        isAccepted: false,
+        failedReason: "undefined_transformation",
+        transformations,
+      };
+    }
+
+    currentState = transformation.nextState;
+    transformations.push(transformation);
+  }
+
+  if (!language.finalStates.includes(currentState)) {
+    return {
+      isAccepted: false,
+      failedReason: "state_is_not_final",
+      transformations,
+    };
+  } else {
+    return { isAccepted: true, transformations };
+  }
 }
 
 main();

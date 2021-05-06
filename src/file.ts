@@ -1,6 +1,6 @@
 import { readFileSync, writeFileSync } from "fs";
 
-type Transformation = {
+export type Transformation = {
   state: string;
   nextState: string;
   symbol: string;
