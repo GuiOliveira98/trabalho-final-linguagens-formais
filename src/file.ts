@@ -1,4 +1,4 @@
-import { readFileSync } from "fs";
+import { readFileSync, writeFileSync } from "fs";
 
 type Transformation = {
   state: string;
@@ -10,6 +10,7 @@ type Language = {
   name: string;
   symbols: string[];
   states: string[];
+  productionName: string;
   initialState: string;
   finalStates: string[];
   transformations: Transformation[];
@@ -17,7 +18,7 @@ type Language = {
 
 export function loadLanguageDataFromFile(filepath: string): Language {
   const file = readFileSync(filepath, "utf-8");
-  const lines = file.split("\r\n");
+  const lines = file.split("\n");
 
   const firstLine = lines.shift(); //PopFront()
 
@@ -47,6 +48,10 @@ export function loadLanguageDataFromFile(filepath: string): Language {
 
   // {q0,q1,q2,q3},{a,b >}< ,Prog [,] q0,{q1,q3}
   const fourthArgSeparator = props.indexOf(",", secondCloseBracket + 2);
+  const productionName = props.substring(
+    secondCloseBracket + 2,
+    fourthArgSeparator
+  );
 
   // {q0,q1,q2,q3},{a,b},Prog >,< q0 [,] {q1,q3}
   const fifthArgSeparator = props.indexOf(",", fourthArgSeparator + 1);
@@ -80,10 +85,29 @@ export function loadLanguageDataFromFile(filepath: string): Language {
 
   return {
     name,
-    states,
     symbols,
+    productionName,
+    states,
     initialState,
     finalStates,
     transformations,
   };
+}
+
+export function saveLanguageToFile(language: Language, path: string) {
+  const states = "{" + language.states.join(",") + "}";
+  const symbols = "{" + language.symbols.join(",") + "}";
+  const finalStates = "{" + language.finalStates.join(",") + "}";
+  const transformations = language.transformations.map(
+    (transformation) =>
+      `(${transformation.state},${transformation.symbol})=${transformation.nextState}`
+  );
+
+  const fileData = `${language.name}=(${states},${symbols},${
+    language.productionName
+  },${language.initialState},${finalStates})
+${language.productionName}
+${transformations.join("\n")}`;
+
+  writeFileSync(path, fileData);
 }
