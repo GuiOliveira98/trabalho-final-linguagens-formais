@@ -1,3 +1,4 @@
+import { readFileSync } from "fs";
 import {
   Language,
   loadLanguageDataFromFile,
@@ -7,9 +8,32 @@ import {
 
 function main() {
   const language = loadLanguageDataFromFile("example_file.txt");
-  console.log(processWord("bab", language));
-  simplifyLanguage(language);
-  saveLanguageToFile(language, "out.txt");
+  filterPairOfWords("example_words.txt", language);
+}
+
+function filterPairOfWords(filepath: string, language: Language) {
+  const file = readFileSync(filepath, "utf-8");
+  const lines = file.split("\n");
+
+  const acceptedPairs: string[][] = [];
+  for (let line of lines) {
+    line = line.replace("(", "").replace(")", "");
+    const words = line.split(",");
+
+    const processedWord1 = processWord(words[0], language);
+    const processedWord2 = processWord(words[1], language);
+
+    if (processedWord1.isAccepted && processedWord2.isAccepted) {
+      acceptedPairs.push(words);
+    }
+  }
+
+  console.log("Resultados:");
+  console.log(
+    acceptedPairs
+      .map((acceptedPair) => `(${acceptedPair[0]},${acceptedPair[1]})`)
+      .join("\n")
+  );
 }
 
 function simplifyLanguage(language: Language) {

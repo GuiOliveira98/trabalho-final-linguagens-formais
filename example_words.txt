@@ -1,0 +1,4 @@
+(aba,abaa)
+(ab,ba)
+(ababa,aba)
+(aba,abb)
