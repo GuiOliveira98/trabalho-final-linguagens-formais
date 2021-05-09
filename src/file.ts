@@ -76,3 +76,10 @@ export function decodeLanguageFromFileData(fileData: string): Language {
     transformations,
   };
 }
+
+/*
+Código por:
+Guilherme Oliveira - 278301
+Ronald Maciel - 281987
+Camila Maffi - 243691
+*/
