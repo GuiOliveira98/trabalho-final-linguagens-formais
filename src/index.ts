@@ -1,141 +1,148 @@
-import { readFileSync } from "fs";
+import scanf from "scanf";
+import { decodeLanguageFromFileData } from "./file";
+import { filterPairOfWords, processWord, simplifyLanguage } from "./language";
 import {
-  Language,
-  loadLanguageDataFromFile,
-  saveLanguageToFile,
-  Transformation,
-} from "./file";
+  color,
+  logLanguage,
+  makeTransformation,
+  pressEnterToContinue,
+  readFilePrompt,
+  tint,
+} from "./userInterface";
 
 function main() {
-  const language = loadLanguageDataFromFile("example_file.txt");
-  filterPairOfWords("example_words.txt", language);
-}
+  console.clear();
+  console.log("Olá!");
 
-function filterPairOfWords(filepath: string, language: Language) {
-  const file = readFileSync(filepath, "utf-8");
-  const lines = file.split("\n");
+  while (true) {
+    console.log("Digite o nome do arquivo que contenha uma linguagem.");
+    console.log(`(Você está rodando esse programa na pasta "${process.cwd()}"`);
+    const fileData = readFilePrompt();
 
-  const acceptedPairs: string[][] = [];
-  for (let line of lines) {
-    line = line.replace("(", "").replace(")", "");
-    const words = line.split(",");
+    console.clear();
+    process.stdout.write("Decodificando arquivo...");
+    const language = decodeLanguageFromFileData(fileData);
+    console.log(tint(color.FgGreen, "OK!"));
 
-    const processedWord1 = processWord(words[0], language);
-    const processedWord2 = processWord(words[1], language);
+    console.log("");
+    logLanguage(language);
 
-    if (processedWord1.isAccepted && processedWord2.isAccepted) {
-      acceptedPairs.push(words);
-    }
-  }
+    pressEnterToContinue();
 
-  console.log("Resultados:");
-  console.log(
-    acceptedPairs
-      .map((acceptedPair) => `(${acceptedPair[0]},${acceptedPair[1]})`)
-      .join("\n")
-  );
-}
+    console.clear();
+    process.stdout.write("Minimizando linguagem...");
+    const change = simplifyLanguage(language);
+    console.log(tint(color.FgGreen, "OK!"));
 
-function simplifyLanguage(language: Language) {
-  // remove transformations that dont use language symbols
-  language.transformations = language.transformations.filter((transformation) =>
-    language.symbols.includes(transformation.symbol)
-  );
+    console.log("");
 
-  let statesReachableFromInitialState = [language.initialState];
-  let extraStates = [];
-  do {
-    extraStates = [];
-    extraStates = language.transformations
-      .filter((transformation) =>
-        statesReachableFromInitialState.includes(transformation.state)
-      )
-      .filter(
-        (transformation) =>
-          !statesReachableFromInitialState.includes(transformation.nextState)
-      )
-      .map((transformation) => transformation.nextState);
-
-    statesReachableFromInitialState = statesReachableFromInitialState.concat(
-      extraStates
-    );
-  } while (extraStates.length > 0);
-
-  // remove transformations unreachable from from initial state
-  language.transformations = language.transformations.filter(
-    (transformation) =>
-      statesReachableFromInitialState.includes(transformation.state) &&
-      statesReachableFromInitialState.includes(transformation.nextState)
-  );
-
-  let statesReachableFromFinalStates = [...language.finalStates];
-  let additionalStates = [];
-  do {
-    additionalStates = [];
-    additionalStates = language.transformations
-      .filter((transformation) =>
-        statesReachableFromFinalStates.includes(transformation.nextState)
-      )
-      .filter(
-        (transformation) =>
-          !statesReachableFromFinalStates.includes(transformation.state)
-      )
-      .map((transformation) => transformation.state);
-
-    statesReachableFromFinalStates = statesReachableFromFinalStates.concat(
-      additionalStates
-    );
-  } while (additionalStates.length > 0);
-
-  // remove transformations unreachable from from final state
-  language.transformations = language.transformations.filter(
-    (transformation) =>
-      statesReachableFromFinalStates.includes(transformation.state) &&
-      statesReachableFromFinalStates.includes(transformation.nextState)
-  );
-}
-
-function processWord(
-  word: string,
-  language: Language
-): {
-  isAccepted: boolean;
-  failedReason?: "undefined_transformation" | "state_is_not_final";
-  transformations: Transformation[];
-} {
-  let currentState = language.initialState;
-  const transformations: Transformation[] = [];
-  let transformation: Transformation | undefined;
-
-  for (let step = 0; step < word.length; step++) {
-    let symbol = word[step];
-
-    transformation = language.transformations.find(
-      (transformation) =>
-        transformation.state === currentState &&
-        transformation.symbol === symbol
-    );
-
-    if (transformation === undefined) {
-      return {
-        isAccepted: false,
-        failedReason: "undefined_transformation",
-        transformations,
-      };
+    for (const transformation of change.unusedSymbols) {
+      console.log(
+        `Removeu ${makeTransformation(transformation)} pois ${tint(
+          color.FgCyan,
+          transformation.symbol
+        )} é um símbolo inválido.`
+      );
     }
 
-    currentState = transformation.nextState;
-    transformations.push(transformation);
-  }
+    for (const transformation of change.unreachableFromInitialState) {
+      console.log(
+        `Removeu ${makeTransformation(transformation)} pois ${tint(
+          color.FgCyan,
+          transformation.symbol
+        )} pois o estado inicial não possui caminho até um dos estados.`
+      );
+    }
 
-  if (!language.finalStates.includes(currentState)) {
-    return {
-      isAccepted: false,
-      failedReason: "state_is_not_final",
-      transformations,
-    };
-  } else {
-    return { isAccepted: true, transformations };
+    for (const transformation of change.finalStateUnreachable) {
+      console.log(
+        `Removeu ${makeTransformation(transformation)} pois ${tint(
+          color.FgCyan,
+          transformation.symbol
+        )} pois um dos estados não possui caminho para nenhum estado final.`
+      );
+    }
+
+    console.log("");
+    logLanguage(language);
+
+    pressEnterToContinue();
+
+    while (true) {
+      console.clear();
+      logLanguage(language);
+      console.log("");
+      console.log("Selecione uma opção:");
+      console.log("1 - Checa se uma palavra pertence à linguagem");
+      console.log(
+        "2 - Filtra pares de palavra não pertencentes à linguagem de um arquivo"
+      );
+      console.log("3 - Trocar de linguagem");
+      process.stdout.write("Opção: ");
+      const option = scanf("%d");
+
+      if (option !== 1 && option !== 2 && option !== 3) {
+        console.log("\n" + tint(color.FgRed, "Opção inválida."));
+        pressEnterToContinue();
+        continue;
+      }
+
+      if (option === 1) {
+        console.clear();
+        process.stdout.write("Digite uma palavra: ");
+        const word = scanf("%s").replace("\r", "");
+        const result = processWord(word, language);
+
+        console.log("");
+        result.transformations.map((transformation) =>
+          console.log(makeTransformation(transformation))
+        );
+        console.log("");
+        if (result.isAccepted) {
+          console.log(tint(color.FgGreen, "PALAVRA ACEITA!"));
+        } else {
+          console.log(tint(color.FgRed, "PALAVRA NÃO ACEITA!"));
+          console.log(
+            `Motivo: ${
+              result.failedReason === "state_is_not_final"
+                ? "Último estado não é final"
+                : "Transformação não definida para o símbolo lido no estado atual."
+            }`
+          );
+        }
+
+        pressEnterToContinue();
+      } else if (option === 2) {
+        console.clear();
+        console.log("Digite o nome de arquivo de entrada.");
+        const fileData = readFilePrompt();
+
+        const pairOfWords = filterPairOfWords(fileData, language);
+
+        console.log(tint(color.FgRed, "\nPares rejeitados"));
+        if (pairOfWords.rejectedPairs.length === 0) {
+          console.log("[Nenhuma]");
+        } else {
+          for (const pair of pairOfWords.rejectedPairs) {
+            console.log(`(${pair[0]}, ${pair[1]})`);
+          }
+        }
+
+        console.log(tint(color.FgGreen, "\nPares aceitos"));
+        if (pairOfWords.acceptedPairs.length === 0) {
+          console.log("[Nenhuma]");
+        } else {
+          for (const pair of pairOfWords.acceptedPairs) {
+            console.log(`(${pair[0]}, ${pair[1]})`);
+          }
+        }
+
+        pressEnterToContinue();
+      } else if (option === 3) {
+        console.clear();
+        break;
+      }
+    }
   }
 }
 

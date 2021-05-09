@@ -1,24 +1,7 @@
-import { readFileSync, writeFileSync } from "fs";
+import { Language, Transformation } from "./language";
 
-export type Transformation = {
-  state: string;
-  nextState: string;
-  symbol: string;
-};
-
-export type Language = {
-  name: string;
-  symbols: string[];
-  states: string[];
-  productionName: string;
-  initialState: string;
-  finalStates: string[];
-  transformations: Transformation[];
-};
-
-export function loadLanguageDataFromFile(filepath: string): Language {
-  const file = readFileSync(filepath, "utf-8");
-  const lines = file.split("\n");
+export function decodeLanguageFromFileData(fileData: string): Language {
+  const lines = fileData.split("\n");
 
   const firstLine = lines.shift(); //PopFront()
 
@@ -92,22 +75,4 @@ export function loadLanguageDataFromFile(filepath: string): Language {
     finalStates,
     transformations,
   };
-}
-
-export function saveLanguageToFile(language: Language, path: string) {
-  const states = "{" + language.states.join(",") + "}";
-  const symbols = "{" + language.symbols.join(",") + "}";
-  const finalStates = "{" + language.finalStates.join(",") + "}";
-  const transformations = language.transformations.map(
-    (transformation) =>
-      `(${transformation.state},${transformation.symbol})=${transformation.nextState}`
-  );
-
-  const fileData = `${language.name}=(${states},${symbols},${
-    language.productionName
-  },${language.initialState},${finalStates})
-${language.productionName}
-${transformations.join("\n")}`;
-
-  writeFileSync(path, fileData);
 }
