@@ -1,0 +1,5 @@
+Para rodar o código fonte:
+É preciso instalar:
+- NodeJS [https://nodejs.org/en/download/]
+- Yarn [https://classic.yarnpkg.com/en/docs/install/]
+e então basta digitar "yarn go" no cmd na pasta do projeto

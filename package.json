@@ -5,6 +5,7 @@
   "author": "GuiOliveira98 <guil.oliveira98@gmail.com>",
   "license": "MIT",
   "scripts": {
+    "go": "yarn && yarn tsc --project tsconfig,json && node out/index.js",
     "watch": "yarn tsc --project tsconfig,json --watch",
     "main": "node out/index.js"
   },
