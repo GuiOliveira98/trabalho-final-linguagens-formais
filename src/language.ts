@@ -14,14 +14,27 @@ export type Language = {
   transformations: Transformation[];
 };
 
-export function simplifyLanguage(language: Language) {
-  const unusedSymbols = language.transformations.filter(
+export function minimizeLanguage(language: Language) {
+  const symbolsWithNoTransformations = language.symbols.filter(
+    (symbol) =>
+      language.transformations.find(
+        (transformation) => transformation.symbol === symbol
+      ) === undefined
+  );
+
+  // remove symbols with no transformations
+  language.symbols = language.symbols.filter(
+    (symbol) => !symbolsWithNoTransformations.includes(symbol)
+  );
+
+  const transformationsWithInvalidSymbols = language.transformations.filter(
     (transformation) => !language.symbols.includes(transformation.symbol)
   );
 
   // remove transformations that dont use language symbols
   language.transformations = language.transformations.filter(
-    (transformation) => !unusedSymbols.includes(transformation)
+    (transformation) =>
+      !transformationsWithInvalidSymbols.includes(transformation)
   );
 
   let statesReachableFromInitialState = [language.initialState];
@@ -84,7 +97,12 @@ export function simplifyLanguage(language: Language) {
     (transformation) => !finalStateUnreachable.includes(transformation)
   );
 
-  return { unusedSymbols, unreachableFromInitialState, finalStateUnreachable };
+  return {
+    symbolsWithNoTransformations,
+    transformationsWithInvalidSymbols,
+    unreachableFromInitialState,
+    finalStateUnreachable,
+  };
 }
 
 export function processWord(

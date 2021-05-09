@@ -1,6 +1,6 @@
 import scanf from "scanf";
 import { decodeLanguageFromFileData } from "./file";
-import { filterPairOfWords, processWord, simplifyLanguage } from "./language";
+import { filterPairOfWords, processWord, minimizeLanguage } from "./language";
 import {
   color,
   logLanguage,
@@ -31,12 +31,21 @@ function main() {
 
     console.clear();
     process.stdout.write("Minimizando linguagem...");
-    const change = simplifyLanguage(language);
+    const change = minimizeLanguage(language);
     console.log(tint(color.FgGreen, "OK!"));
 
     console.log("");
 
-    for (const transformation of change.unusedSymbols) {
+    for (const symbol of change.symbolsWithNoTransformations) {
+      console.log(
+        `Removeu o símbolo ${tint(
+          color.FgCyan,
+          symbol
+        )} pois a linguagem não possui transformações para ele.`
+      );
+    }
+
+    for (const transformation of change.transformationsWithInvalidSymbols) {
       console.log(
         `Removeu ${makeTransformation(transformation)} pois ${tint(
           color.FgCyan,
